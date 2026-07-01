@@ -2,8 +2,9 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
-  // Emit a self-contained server bundle for a lean production Docker image.
-  output: "standalone",
+  // Self-contained server bundle for a lean Docker image. On Vercel we let the
+  // platform's own build adapter handle output (standalone is only for self-host).
+  output: process.env.VERCEL ? undefined : "standalone",
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "images.unsplash.com" },

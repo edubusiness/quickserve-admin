@@ -1,0 +1,27 @@
+# Render Blueprint for the QuickServe API (Docker).
+# Deploy: push this repo, then in Render → "New +" → "Blueprint" → pick this repo.
+# MONGODB_URI and CLIENT_ORIGIN are marked sync:false — set them in the dashboard
+# (MONGODB_URI = your Atlas connection string; CLIENT_ORIGIN = your Vercel URL).
+services:
+  - type: web
+    name: quickserve-api
+    runtime: docker
+    dockerfilePath: ./server/Dockerfile
+    dockerContext: ./server
+    plan: free
+    region: oregon
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "4000"
+      - key: JWT_EXPIRES_IN
+        value: "7d"
+      - key: JWT_SECRET
+        generateValue: true
+      - key: MONGODB_URI
+        sync: false
+      - key: CLIENT_ORIGIN
+        sync: false
