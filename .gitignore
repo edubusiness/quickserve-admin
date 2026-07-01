@@ -1,0 +1,25 @@
+# dependencies
+node_modules/
+
+# build output
+/.next
+/out
+/build
+dist/
+*.tsbuildinfo
+next-env.d.ts
+
+# env & secrets
+.env*
+!.env.example
+
+# local editor / tooling
+.DS_Store
+.claude/settings.local.json
+npm-debug.log*
+
+# scratch reference screenshots
+/123.png
+/1234.png
+/s.png
+/2682dec2-38ea-4605-96b8-81912b4be81c.png
