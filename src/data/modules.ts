@@ -175,7 +175,7 @@ export const moduleRegistry: Record<string, ModuleConfig> = {
 
   "support": {
     kind: "table", title: "Support & Complaints", subtitle: "Customer tickets, complaints and resolution tracking.",
-    actionLabel: "New Ticket", exportName: "support", searchKeys: ["id", "subject", "customer"],
+    actionLabel: "New Ticket", exportName: "support", searchKeys: ["id", "subject", "name"],
     filters: { key: "status", label: "Status", options: ["all", "open", "pending", "resolved", "closed"] },
     stats: [
       { label: "Open Tickets", value: 42, tone: "warning" }, { label: "Resolved", value: 318, tone: "success" },
@@ -183,7 +183,7 @@ export const moduleRegistry: Record<string, ModuleConfig> = {
     ],
     columns: [
       { key: "id", header: "Ticket", type: "mono", sortable: true },
-      { key: "customer", header: "Customer", type: "avatar", sub: "email", sortable: true },
+      { key: "name", header: "Customer", type: "avatar", sub: "email", sortable: true },
       { key: "subject", header: "Subject", sortable: true },
       { key: "priority", header: "Priority", type: "badge", tones: statusTones, sortable: true },
       { key: "status", header: "Status", type: "badge", tones: statusTones, sortable: true },
@@ -194,10 +194,10 @@ export const moduleRegistry: Record<string, ModuleConfig> = {
 
   "bookings/scheduled": {
     kind: "table", title: "Scheduled Bookings", subtitle: "Upcoming bookings scheduled for a future date.",
-    actionLabel: "Schedule Booking", exportName: "scheduled", searchKeys: ["id", "customer", "service"],
+    actionLabel: "Schedule Booking", exportName: "scheduled", searchKeys: ["id", "name", "service"],
     columns: [
       { key: "id", header: "Booking", type: "mono", sortable: true },
-      { key: "customer", header: "Customer", type: "avatar", sub: "city", sortable: true },
+      { key: "name", header: "Customer", type: "avatar", sub: "city", sortable: true },
       { key: "service", header: "Service", sortable: true },
       { key: "amount", header: "Amount", type: "currency", align: "right", sortable: true },
       { key: "date", header: "Scheduled For", type: "date", sortable: true },
@@ -207,11 +207,11 @@ export const moduleRegistry: Record<string, ModuleConfig> = {
   },
   "bookings/history": {
     kind: "table", title: "Booking History", subtitle: "Completed and cancelled bookings archive.",
-    actionLabel: "Add Record", exportName: "history", searchKeys: ["id", "customer", "service"],
+    actionLabel: "Add Record", exportName: "history", searchKeys: ["id", "name", "service"],
     filters: { key: "status", label: "Status", options: ["all", "completed", "cancelled"] },
     columns: [
       { key: "id", header: "Booking", type: "mono", sortable: true },
-      { key: "customer", header: "Customer", type: "avatar", sub: "city", sortable: true },
+      { key: "name", header: "Customer", type: "avatar", sub: "city", sortable: true },
       { key: "service", header: "Service", sortable: true },
       { key: "amount", header: "Amount", type: "currency", align: "right", sortable: true },
       { key: "date", header: "Date", type: "date", sortable: true },
