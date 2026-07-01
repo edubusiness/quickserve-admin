@@ -1,5 +1,7 @@
 # QuickServe — Enterprise Admin Dashboard
 
+[![CI](https://github.com/edubusiness/quickserve-admin/actions/workflows/ci.yml/badge.svg)](https://github.com/edubusiness/quickserve-admin/actions/workflows/ci.yml)
+
 A premium, dark-first admin dashboard for a multi-service marketplace platform
 (bookings, providers, drivers, delivery, payments, analytics). Built as a
 polished, runnable foundation that improves on the reference design with a
