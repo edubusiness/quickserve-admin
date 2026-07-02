@@ -63,7 +63,7 @@ export default function ProvidersPage() {
       openCreate();
       window.history.replaceState({}, "", window.location.pathname);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, []);
 
   const submitForm = (values: ProviderFormValues) => {

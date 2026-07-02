@@ -75,6 +75,46 @@ Vercel auto-detects Next.js (a minimal `vercel.json` is included).
 
 ---
 
+## 5. Use your own domain — `school.manyathy.in`
+
+The plan: **web → `school.manyathy.in`** (Vercel), **API → `api.manyathy.in`** (Render).
+Your domain is registered at Hostinger, so DNS is edited in
+**hPanel → Domains → DNS / Nameservers → DNS Zone editor** (leave nameservers on Hostinger).
+
+### 5a. Point the API subdomain at Render
+1. Render → your `quickserve-api` service → **Settings → Custom Domains → Add** `api.manyathy.in`.
+   Render shows a **CNAME target** (e.g. `quickserve-api.onrender.com`).
+2. Hostinger DNS Zone → **Add record**: `CNAME`, name `api`, value = that Render target, TTL default.
+3. Wait for Render to show "Certificate issued" (free HTTPS). Test `https://api.manyathy.in/health` → `{"status":"ok"}`.
+
+### 5b. Point the web subdomain at Vercel
+1. Vercel → project → **Settings → Domains → Add** `school.manyathy.in`.
+   Vercel shows the record to create (a **CNAME** `school → cname.vercel-dns.com`).
+2. Hostinger DNS Zone → **Add record**: `CNAME`, name `school`, value `cname.vercel-dns.com`, TTL default.
+3. Wait until Vercel marks the domain **Valid** (issues HTTPS automatically).
+
+### 5c. Set env vars to the real domains (then redeploy)
+| Where | Key | Value |
+|-------|-----|-------|
+| Vercel | `NEXT_PUBLIC_API_URL` | `https://api.manyathy.in` |
+| Vercel | `API_URL` | `https://api.manyathy.in` |
+| Vercel | `NEXTAUTH_URL` | `https://school.manyathy.in` |
+| Vercel | `AUTH_SECRET` / `NEXTAUTH_SECRET` | output of `openssl rand -base64 32` |
+| Render | `CLIENT_ORIGIN` | `https://school.manyathy.in` |
+| Render | `MONGODB_URI` | your Atlas string |
+
+- `NEXT_PUBLIC_API_URL` is **baked at build time** → after setting it, **redeploy** the Vercel project.
+- After setting `CLIENT_ORIGIN`, **redeploy** the Render API (that's what CORS allows).
+
+### 5d. Verify
+`https://school.manyathy.in` → login screen → sign in `admin@quickserve.io / admin123` →
+data loads from `api.manyathy.in` → Atlas. Done.
+
+> DNS can take minutes to a few hours to propagate. Both Render and Vercel issue free
+> Let's Encrypt certificates automatically once the CNAME resolves.
+
+---
+
 ## Gotchas
 
 - **CORS 4xx** → `CLIENT_ORIGIN` on Render must exactly match the Vercel origin (scheme + host, no trailing slash).

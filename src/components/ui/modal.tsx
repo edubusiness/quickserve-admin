@@ -28,7 +28,7 @@ export function Modal({
   return (
     <AnimatePresence>
       {open && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[60] flex items-end justify-center sm:items-center sm:p-4">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -43,7 +43,7 @@ export function Modal({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 16 }}
             transition={{ type: "spring", damping: 26, stiffness: 300 }}
-            className="card-surface relative z-10 flex max-h-[90vh] w-full max-w-lg flex-col"
+            className="card-surface relative z-10 flex max-h-[92vh] w-full max-w-lg flex-col rounded-b-none sm:max-h-[90vh] sm:rounded-b-[var(--radius-card)]"
           >
             <div className="flex items-start justify-between gap-4 border-b border-border p-5">
               <div>

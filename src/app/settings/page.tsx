@@ -14,6 +14,9 @@ import Link from "next/link";
 import { Card, CardHeader } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { PageHeader } from "@/components/ui/page-header";
+import { ApiKeysSection } from "@/components/settings/api-keys-section";
+import { PaymentGatewaysSection } from "@/components/settings/payment-gateways-section";
+import { MapsSection } from "@/components/settings/maps-section";
 
 interface ToggleSetting {
   key: string;
@@ -125,6 +128,15 @@ export default function SettingsPage() {
           </ul>
         </Card>
       </div>
+
+      {/* API Keys (CRUD) */}
+      <ApiKeysSection />
+
+      {/* Payment Gateways (CRUD) */}
+      <PaymentGatewaysSection />
+
+      {/* Maps & Location providers */}
+      <MapsSection />
 
       {/* Quick links */}
       <Card className="p-5">

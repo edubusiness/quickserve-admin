@@ -1,6 +1,8 @@
 import express from "express";
 import cors from "cors";
 import morgan from "morgan";
+import helmet from "helmet";
+import rateLimit from "express-rate-limit";
 import { env } from "./config/env.js";
 import { authRouter } from "./routes/auth.routes.js";
 import { dashboardRouter } from "./routes/dashboard.routes.js";
@@ -11,14 +13,29 @@ import { notFound, errorHandler } from "./middleware/error.js";
 export function createApp() {
   const app = express();
 
+  // Behind a proxy (Render/Vercel/Nginx) so rate-limit sees the real client IP.
+  app.set("trust proxy", 1);
+  app.use(helmet());
   app.use(cors({ origin: env.clientOrigin.split(","), credentials: true }));
-  app.use(express.json());
+  app.use(express.json({ limit: "1mb" }));
   if (env.nodeEnv !== "test") app.use(morgan("dev"));
 
   app.get("/health", (_req, res) =>
     res.json({ status: "ok", mode: env.useMemoryStore ? "memory" : "mongodb", time: new Date().toISOString() }),
   );
 
+  // Throttle credential endpoints to blunt brute-force / credential-stuffing.
+  const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    limit: 20,
+    standardHeaders: "draft-7",
+    legacyHeaders: false,
+    message: { error: "Too many attempts. Please try again later." },
+    skip: () => env.nodeEnv === "test",
+  });
+
+  app.use("/api/auth/login", authLimiter);
+  app.use("/api/auth/register", authLimiter);
   app.use("/api/auth", authRouter);
   app.use("/api/dashboard", dashboardRouter);
 

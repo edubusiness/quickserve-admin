@@ -1,6 +1,5 @@
 "use client";
 
-import { motion } from "framer-motion";
 import { ArrowUpRight, ArrowDownRight } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Sparkline } from "@/components/charts/sparkline";

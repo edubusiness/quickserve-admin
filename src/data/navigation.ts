@@ -76,6 +76,7 @@ export const navigation: NavSection[] = [
       { label: "Service Providers", icon: Briefcase, href: "/providers" },
       { label: "Drivers", icon: Car, href: "/drivers" },
       { label: "Delivery Partners", icon: Bike, href: "/delivery-partners" },
+      { label: "Agent Verification", icon: ShieldCheck, href: "/agent-verification" },
       { label: "Employees", icon: IdCard, href: "/employees" },
     ],
   },

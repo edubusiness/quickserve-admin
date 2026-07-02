@@ -4,6 +4,7 @@ import { createApp } from "./app.js";
 import { connectDb } from "./db/connect.js";
 import { seedUsers, seedDatabase } from "./seed/seed.js";
 import { startActivityStream } from "./sockets/activity.js";
+import { startTrackingStream } from "./sockets/tracking.js";
 import { env } from "./config/env.js";
 
 async function bootstrap() {
@@ -18,6 +19,7 @@ async function bootstrap() {
     cors: { origin: env.clientOrigin.split(","), credentials: true },
   });
   startActivityStream(io);
+  startTrackingStream(io);
 
   httpServer.listen(env.port, () => {
     console.log(`\n🚀 QuickServe API running on http://localhost:${env.port}`);

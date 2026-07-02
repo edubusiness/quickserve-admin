@@ -234,7 +234,8 @@ export function DataTable<T>({
 
   const toggleRow = (id: string) => {
     const next = new Set(selected);
-    next.has(id) ? next.delete(id) : next.add(id);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
     setSelected(next);
   };
 
@@ -482,19 +483,51 @@ export function DataTable<T>({
         </table>
       </div>
 
-      {/* Mobile card view */}
-      {renderCard && (
-        <div className="space-y-3 p-4 md:hidden">
-          {rows.map((row) => (
-            <div key={getRowId(row)}>{renderCard(row)}</div>
-          ))}
-          {rows.length === 0 && (
-            <p className="py-8 text-center text-sm text-muted-foreground">
-              No results found.
-            </p>
-          )}
-        </div>
-      )}
+      {/* Mobile card view — custom renderer if provided, else auto-built from columns */}
+      <div className="space-y-3 p-4 md:hidden">
+        {rows.map((row) => {
+          const id = getRowId(row);
+          if (renderCard) return <div key={id}>{renderCard(row)}</div>;
+          const labelled = columns.filter((c) => c.header);
+          const actions = columns.filter((c) => !c.header);
+          return (
+            <div key={id} className="rounded-xl border border-border bg-card/40 p-3.5">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0 flex-1 space-y-2">
+                  {labelled.map((col, i) => {
+                    const value = col.render
+                      ? col.render(row)
+                      : String((row as Record<string, unknown>)[col.key as string] ?? "—");
+                    // First labelled column renders prominently as the card title.
+                    if (i === 0) return <div key={String(col.key)} className="min-w-0 text-sm font-medium text-card-foreground">{value}</div>;
+                    return (
+                      <div key={String(col.key)} className="flex items-start justify-between gap-3">
+                        <span className="shrink-0 text-xs font-medium uppercase tracking-wide text-muted-foreground">{col.header}</span>
+                        <span className="min-w-0 break-words text-right text-sm text-card-foreground">{value}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+                {bulkActions.length > 0 && (
+                  <Checkbox checked={selected.has(id)} onChange={() => toggleRow(id)} />
+                )}
+              </div>
+              {actions.length > 0 && (
+                <div className="mt-3 flex items-center justify-end gap-1 border-t border-border/60 pt-3">
+                  {actions.map((col) => (
+                    <div key={String(col.key)}>{col.render ? col.render(row) : null}</div>
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })}
+        {rows.length === 0 && (
+          <p className="py-8 text-center text-sm text-muted-foreground">
+            No results found.
+          </p>
+        )}
+      </div>
 
       {/* Pagination */}
       <div className="flex flex-col items-center justify-between gap-3 border-t border-border px-4 py-3 sm:flex-row">
@@ -511,6 +544,7 @@ export function DataTable<T>({
         </p>
         <div className="flex items-center gap-1">
           <PagerButton
+            label="Previous page"
             disabled={safePage === 0}
             onClick={() => setPage(safePage - 1)}
           >
@@ -534,6 +568,7 @@ export function DataTable<T>({
             <span className="px-1 text-muted-foreground">…</span>
           )}
           <PagerButton
+            label="Next page"
             disabled={safePage >= pageCount - 1}
             onClick={() => setPage(safePage + 1)}
           >
@@ -631,6 +666,8 @@ function ExportButton({
   return (
     <button
       onClick={onClick}
+      title={label}
+      aria-label={label}
       className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card/60 px-2.5 py-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-[var(--primary)]/10 hover:text-card-foreground"
     >
       <Icon className="h-3.5 w-3.5" />
@@ -643,15 +680,19 @@ function PagerButton({
   children,
   disabled,
   onClick,
+  label,
 }: {
   children: ReactNode;
   disabled?: boolean;
   onClick: () => void;
+  label?: string;
 }) {
   return (
     <button
       disabled={disabled}
       onClick={onClick}
+      title={label}
+      aria-label={label}
       className="grid h-8 w-8 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-40"
     >
       {children}

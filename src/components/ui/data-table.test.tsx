@@ -2,6 +2,11 @@ import { describe, it, expect, vi } from "vitest";
 import { render, screen, fireEvent, within } from "@testing-library/react";
 import { DataTable, type Column } from "./data-table";
 
+// Row content renders in both the desktop <table> and the mobile card view
+// (one is CSS-hidden per breakpoint; jsdom ignores media queries), so row-level
+// text assertions are scoped to the table to avoid duplicate matches.
+const table = () => within(screen.getByRole("table"));
+
 interface Row {
   id: string;
   name: string;
@@ -35,17 +40,17 @@ const setup = (extra: Record<string, unknown> = {}) =>
 describe("DataTable", () => {
   it("renders only the first page of rows", () => {
     setup();
-    expect(screen.getByText("Charlie")).toBeInTheDocument();
-    expect(screen.getByText("Alice")).toBeInTheDocument();
-    expect(screen.queryByText("Bob")).not.toBeInTheDocument();
+    expect(table().getByText("Charlie")).toBeInTheDocument();
+    expect(table().getByText("Alice")).toBeInTheDocument();
+    expect(table().queryByText("Bob")).not.toBeInTheDocument();
     expect(screen.getByText(/of/)).toHaveTextContent("4");
   });
 
   it("filters via search", () => {
     setup();
     fireEvent.change(screen.getByPlaceholderText("Search..."), { target: { value: "dave" } });
-    expect(screen.getByText("Dave")).toBeInTheDocument();
-    expect(screen.queryByText("Charlie")).not.toBeInTheDocument();
+    expect(table().getByText("Dave")).toBeInTheDocument();
+    expect(table().queryByText("Charlie")).not.toBeInTheDocument();
   });
 
   it("sorts ascending then descending on header click", () => {
@@ -63,8 +68,8 @@ describe("DataTable", () => {
   it("navigates pages", () => {
     setup();
     fireEvent.click(screen.getByText("2"));
-    expect(screen.getByText("Bob")).toBeInTheDocument();
-    expect(screen.queryByText("Charlie")).not.toBeInTheDocument();
+    expect(table().getByText("Bob")).toBeInTheDocument();
+    expect(table().queryByText("Charlie")).not.toBeInTheDocument();
   });
 
   it("selects rows and fires bulk actions", () => {
@@ -81,6 +86,6 @@ describe("DataTable", () => {
   it("shows an empty state when search matches nothing", () => {
     setup();
     fireEvent.change(screen.getByPlaceholderText("Search..."), { target: { value: "zzz" } });
-    expect(screen.getByText(/No results found/)).toBeInTheDocument();
+    expect(table().getByText(/No results found/)).toBeInTheDocument();
   });
 });

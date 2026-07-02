@@ -9,7 +9,7 @@ import type { ModuleColumn } from "@/data/modules";
 interface Field {
   key: string;
   label: string;
-  kind: "text" | "number" | "select" | "date";
+  kind: "text" | "number" | "select" | "date" | "time";
   options?: string[];
 }
 
@@ -45,6 +45,14 @@ function buildFields(
       case "date":
         add(c.key, c.header, "date");
         break;
+      case "time":
+        add(c.key, c.header, "time");
+        break;
+      case "phone":
+        add(c.key, c.header, "text");
+        break;
+      case "contact":
+        break; // action column, not an editable field
       case "badge":
         add(c.key, c.header, "select", distinct(rows, c.key));
         break;
@@ -87,6 +95,9 @@ export function GenericFormModal({
   const fields = buildFields(columns, rows);
   const [values, setValues] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const hasTimeWindow = fields.some((f) => f.key === "fromTime") && fields.some((f) => f.key === "toTime");
 
   useEffect(() => {
     if (open) {
@@ -103,12 +114,27 @@ export function GenericFormModal({
       }
       setValues(init);
       setSaving(false);
+      setError(null);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, initial]);
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
+    // A "From"/"To" time window must be a valid, positive range.
+    if (hasTimeWindow) {
+      const from = values.fromTime ?? "";
+      const to = values.toTime ?? "";
+      if (!from || !to) {
+        setError("Both a start and end time are required.");
+        return;
+      }
+      if (to <= from) {
+        setError("The end time must be later than the start time.");
+        return;
+      }
+    }
+    setError(null);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const out: Record<string, any> = {};
     for (const f of fields) {
@@ -162,12 +188,17 @@ export function GenericFormModal({
             <TextField
               key={f.key}
               label={f.label}
-              type={f.kind === "number" ? "number" : f.kind === "date" ? "date" : "text"}
-              required={f.kind === "text"}
+              type={f.kind === "number" ? "number" : f.kind === "date" ? "date" : f.kind === "time" ? "time" : "text"}
+              required={f.kind === "text" || f.kind === "time"}
               value={values[f.key] ?? ""}
               onChange={(e) => setValues((v) => ({ ...v, [f.key]: e.target.value }))}
             />
           ),
+        )}
+        {error && (
+          <p className="sm:col-span-2 rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-sm text-rose-400">
+            {error}
+          </p>
         )}
       </form>
     </Modal>

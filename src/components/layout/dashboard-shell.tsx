@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Sidebar } from "./sidebar";
 import { Header } from "./header";
 import { AiAssistant } from "./ai-assistant";
+import { TooltipProvider } from "@/components/ui/tooltip-provider";
 import { cn } from "@/lib/utils";
 
 export function DashboardShell({ children }: { children: React.ReactNode }) {
@@ -21,7 +22,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
 
       <div
         className={cn(
-          "flex min-h-screen flex-col transition-[padding] duration-300",
+          "flex min-h-screen min-w-0 flex-col transition-[padding] duration-300",
           collapsed ? "lg:pl-[78px]" : "lg:pl-[260px]",
         )}
       >
@@ -31,10 +32,11 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           onOpenMobile={() => setMobileOpen(true)}
           onOpenAssistant={() => setAssistantOpen(true)}
         />
-        <main className="flex-1 px-4 py-5 lg:px-6">{children}</main>
+        <main className="min-w-0 max-w-full flex-1 overflow-x-hidden px-4 py-5 lg:px-6">{children}</main>
       </div>
 
       <AiAssistant open={assistantOpen} onClose={() => setAssistantOpen(false)} />
+      <TooltipProvider />
     </div>
   );
 }

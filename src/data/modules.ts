@@ -9,8 +9,11 @@ export type CellType =
   | "currency"
   | "number"
   | "date"
+  | "time"
   | "avatar"
   | "rating"
+  | "phone"
+  | "contact"
   | "bool";
 
 export interface ModuleColumn {
@@ -80,12 +83,28 @@ const daysAgoISO = (n: number) => {
   d.setDate(d.getDate() - n);
   return d.toISOString();
 };
+/** Deterministic 1–3h service/response window as { fromTime, toTime } in HH:00. */
+const slot = (r: () => number) => {
+  const start = 8 + Math.floor(r() * 10); // 08:00–17:00
+  const dur = 1 + Math.floor(r() * 3); // 1–3 hours
+  const hh = (n: number) => String(n).padStart(2, "0") + ":00";
+  return { fromTime: hh(start), toTime: hh(Math.min(start + dur, 21)) };
+};
 const avatar = (i: number) => `https://i.pravatar.cc/80?img=${(i % 70) + 1}`;
 
 const firsts = ["Ravi", "Sneha", "Arjun", "Priya", "Karthik", "Meera", "Suresh", "Anjali", "Rahul", "Divya", "Vikram", "Pooja", "Amit", "Neha", "Rohan", "Kavya", "Sanjay", "Isha", "Manish", "Tara"];
 const lasts = ["Kumar", "Patel", "Singh", "Sharma", "Nair", "Verma", "Gupta", "Iyer", "Reddy", "Desai", "Joshi", "Kapoor", "Mehta", "Rao"];
 const cities = ["Bangalore", "Mumbai", "Delhi", "Hyderabad", "Chennai", "Pune"];
 const name = (i: number, r: () => number) => `${firsts[i % firsts.length]} ${pick(lasts, r)}`;
+/** Realistic Indian mobile number, e.g. "+91 98450 12345". */
+const phone = (r: () => number) => {
+  const a = 70 + Math.floor(r() * 30); // 70–99 series
+  const b = String(10000 + Math.floor(r() * 89999));
+  const c = String(10000 + Math.floor(r() * 89999));
+  return `+91 ${a}${b.slice(0, 3)} ${c}`;
+};
+const supportAgents = ["Anjali Rao", "Rahul Nair", "Meera Iyer", "Vikram Sethi", "Pooja Menon", "Arjun Bhat"];
+const agent = (r: () => number) => pick(supportAgents, r);
 
 // ---------------- Generators ----------------
 function people(seed: number, idPrefix: string, extra: (r: () => number, i: number) => Record<string, unknown>, n = 18) {
@@ -122,6 +141,7 @@ const statusTones: Record<string, BadgeTone> = {
   active: "success", inactive: "warning", blocked: "danger", pending: "info",
   paid: "success", failed: "danger", refunded: "info", processing: "warning",
   completed: "success", scheduled: "info", cancelled: "danger", ongoing: "info",
+  confirmed: "success", assigned: "primary", rescheduled: "warning", "no-show": "danger",
   open: "warning", resolved: "success", closed: "neutral", escalated: "danger",
   live: "success", paused: "warning", draft: "neutral", expired: "danger",
   sent: "success", delivered: "success", queued: "warning", failed_msg: "danger",
@@ -143,11 +163,13 @@ export const moduleRegistry: Record<string, ModuleConfig> = {
       { key: "service", header: "Service", sortable: true },
       { key: "agent", header: "Assigned To", type: "avatar", sub: "city", sortable: true },
       { key: "eta", header: "ETA", sortable: true },
+      { key: "fromTime", header: "From", type: "time", sortable: true },
+      { key: "toTime", header: "To", type: "time", sortable: true },
       { key: "status", header: "Status", type: "badge", tones: statusTones, sortable: true },
     ],
     rows: Array.from({ length: 16 }, (_, i) => {
       const r = rng(700 + i);
-      return { id: `JOB-${5001 + i}`, service: pick(["Home Cleaning", "Electrician", "Plumbing", "Car Service"], r), agent: name(i, r), avatar: avatar(i), city: pick(cities, r), eta: `${4 + Math.floor(r() * 25)} min`, status: pick(["ongoing", "pending", "completed"], r) };
+      return { id: `JOB-${5001 + i}`, service: pick(["Home Cleaning", "Electrician", "Plumbing", "Car Service"], r), agent: name(i, r), avatar: avatar(i), city: pick(cities, r), eta: `${4 + Math.floor(r() * 25)} min`, ...slot(r), status: pick(["ongoing", "pending", "completed"], r) };
     }),
   },
 
@@ -166,16 +188,18 @@ export const moduleRegistry: Record<string, ModuleConfig> = {
       { key: "priority", header: "Priority", type: "badge", tones: statusTones, sortable: true },
       { key: "status", header: "Status", type: "badge", tones: statusTones, sortable: true },
       { key: "time", header: "Reported", type: "date", sortable: true },
+      { key: "fromTime", header: "Response From", type: "time", sortable: true },
+      { key: "toTime", header: "Response To", type: "time", sortable: true },
     ],
     rows: Array.from({ length: 14 }, (_, i) => {
       const r = rng(810 + i);
-      return { id: `SOS-${4587 - i}`, type: pick(["Medical Emergency", "Plumbing Burst", "Electrical Issue", "Gas Leak", "Accident"], r), location: `${pick(["Koramangala", "HSR Layout", "Indiranagar", "Whitefield"], r)}, ${pick(cities, r)}`, priority: pick(["high", "medium", "low"], r), status: pick(["open", "escalated", "resolved"], r), time: daysAgoISO(Math.floor(r() * 3)) };
+      return { id: `SOS-${4587 - i}`, type: pick(["Medical Emergency", "Plumbing Burst", "Electrical Issue", "Gas Leak", "Accident"], r), location: `${pick(["Koramangala", "HSR Layout", "Indiranagar", "Whitefield"], r)}, ${pick(cities, r)}`, priority: pick(["high", "medium", "low"], r), status: pick(["open", "escalated", "resolved"], r), time: daysAgoISO(Math.floor(r() * 3)), ...slot(r) };
     }),
   },
 
   "support": {
     kind: "table", title: "Support & Complaints", subtitle: "Customer tickets, complaints and resolution tracking.",
-    actionLabel: "New Ticket", exportName: "support", searchKeys: ["id", "subject", "name"],
+    actionLabel: "New Ticket", exportName: "support", searchKeys: ["id", "subject", "name", "phone", "agent"],
     filters: { key: "status", label: "Status", options: ["all", "open", "pending", "resolved", "closed"] },
     stats: [
       { label: "Open Tickets", value: 42, tone: "warning" }, { label: "Resolved", value: 318, tone: "success" },
@@ -184,46 +208,60 @@ export const moduleRegistry: Record<string, ModuleConfig> = {
     columns: [
       { key: "id", header: "Ticket", type: "mono", sortable: true },
       { key: "name", header: "Customer", type: "avatar", sub: "email", sortable: true },
+      { key: "phone", header: "Phone", type: "phone", sortable: true },
       { key: "subject", header: "Subject", sortable: true },
+      { key: "agent", header: "Assigned Agent", sortable: true },
       { key: "priority", header: "Priority", type: "badge", tones: statusTones, sortable: true },
       { key: "status", header: "Status", type: "badge", tones: statusTones, sortable: true },
       { key: "date", header: "Updated", type: "date", sortable: true },
+      { key: "fromTime", header: "Callback From", type: "time", sortable: true },
+      { key: "toTime", header: "Callback To", type: "time", sortable: true },
+      { key: "__contact", header: "Contact", type: "contact" },
     ],
-    rows: people(900, "TKT", (r) => ({ subject: pick(["Refund not received", "Provider late", "App issue", "Wrong charge", "Service quality"], r), priority: pick(["high", "medium", "low"], r), status: pick(["open", "pending", "resolved", "closed"], r), date: daysAgoISO(Math.floor(r() * 10)) })),
+    rows: people(900, "TKT", (r) => ({ phone: phone(r), subject: pick(["Refund not received", "Provider late", "App issue", "Wrong charge", "Service quality"], r), agent: agent(r), priority: pick(["high", "medium", "low"], r), status: pick(["open", "pending", "resolved", "closed"], r), date: daysAgoISO(Math.floor(r() * 10)), ...slot(r) })),
   },
 
   "bookings/scheduled": {
     kind: "table", title: "Scheduled Bookings", subtitle: "Upcoming bookings scheduled for a future date.",
-    actionLabel: "Schedule Booking", exportName: "scheduled", searchKeys: ["id", "name", "service"],
+    actionLabel: "Schedule Booking", exportName: "scheduled", searchKeys: ["id", "name", "service", "phone"],
+    filters: { key: "status", label: "Status", options: ["all", "scheduled", "confirmed", "assigned", "pending", "rescheduled", "cancelled"] },
     columns: [
       { key: "id", header: "Booking", type: "mono", sortable: true },
       { key: "name", header: "Customer", type: "avatar", sub: "city", sortable: true },
+      { key: "phone", header: "Phone", type: "phone", sortable: true },
       { key: "service", header: "Service", sortable: true },
       { key: "amount", header: "Amount", type: "currency", align: "right", sortable: true },
       { key: "date", header: "Scheduled For", type: "date", sortable: true },
+      { key: "fromTime", header: "From", type: "time", sortable: true },
+      { key: "toTime", header: "To", type: "time", sortable: true },
       { key: "status", header: "Status", type: "badge", tones: statusTones, sortable: true },
+      { key: "__contact", header: "Contact", type: "contact" },
     ],
-    rows: people(120, "BK", (r) => ({ service: pick(["Home Cleaning", "Salon at Home", "AC Service", "Pest Control"], r), amount: money(r, 350, 4500), date: daysAgoISO(-Math.floor(r() * 14) - 1), status: "scheduled" })),
+    rows: people(120, "BK", (r) => ({ phone: phone(r), service: pick(["Home Cleaning", "Salon at Home", "AC Service", "Pest Control"], r), amount: money(r, 350, 4500), date: daysAgoISO(-Math.floor(r() * 14) - 1), ...slot(r), status: pick(["scheduled", "scheduled", "confirmed", "confirmed", "assigned", "pending", "rescheduled", "cancelled"], r) })),
   },
   "bookings/history": {
     kind: "table", title: "Booking History", subtitle: "Completed and cancelled bookings archive.",
-    actionLabel: "Add Record", exportName: "history", searchKeys: ["id", "name", "service"],
+    actionLabel: "Add Record", exportName: "history", searchKeys: ["id", "name", "service", "phone"],
     filters: { key: "status", label: "Status", options: ["all", "completed", "cancelled"] },
     columns: [
       { key: "id", header: "Booking", type: "mono", sortable: true },
       { key: "name", header: "Customer", type: "avatar", sub: "city", sortable: true },
+      { key: "phone", header: "Phone", type: "phone", sortable: true },
       { key: "service", header: "Service", sortable: true },
       { key: "amount", header: "Amount", type: "currency", align: "right", sortable: true },
       { key: "date", header: "Date", type: "date", sortable: true },
+      { key: "fromTime", header: "Started", type: "time", sortable: true },
+      { key: "toTime", header: "Ended", type: "time", sortable: true },
       { key: "status", header: "Status", type: "badge", tones: statusTones, sortable: true },
+      { key: "__contact", header: "Contact", type: "contact" },
     ],
-    rows: people(130, "BK", (r) => ({ service: pick(["Home Cleaning", "Electrician", "Plumbing", "Car Service"], r), amount: money(r, 350, 4500), date: daysAgoISO(Math.floor(r() * 60) + 1), status: pick(["completed", "completed", "cancelled"], r) })),
+    rows: people(130, "BK", (r) => ({ phone: phone(r), service: pick(["Home Cleaning", "Electrician", "Plumbing", "Car Service"], r), amount: money(r, 350, 4500), date: daysAgoISO(Math.floor(r() * 60) + 1), ...slot(r), status: pick(["completed", "completed", "cancelled"], r) })),
   },
 
   // ---- Users & Partners ----
   "delivery-partners": {
     kind: "table", title: "Delivery Partners", subtitle: "Last-mile delivery fleet and performance.",
-    actionLabel: "Add Partner", exportName: "delivery-partners", searchKeys: ["id", "name", "city", "zone"],
+    actionLabel: "Add Partner", exportName: "delivery-partners", searchKeys: ["id", "name", "city", "zone", "phone"],
     filters: { key: "status", label: "Status", options: ["all", "active", "inactive", "blocked"] },
     stats: [
       { label: "Total Partners", value: 320, tone: "primary" }, { label: "On Duty", value: 184, tone: "success" },
@@ -231,16 +269,18 @@ export const moduleRegistry: Record<string, ModuleConfig> = {
     ],
     columns: [
       { key: "name", header: "Partner", type: "avatar", sub: "id", sortable: true },
+      { key: "phone", header: "Phone", type: "phone", sortable: true },
       { key: "zone", header: "Zone", sortable: true },
       { key: "deliveries", header: "Deliveries", type: "number", align: "right", sortable: true },
       { key: "rating", header: "Rating", type: "rating", sortable: true },
       { key: "status", header: "Status", type: "badge", tones: statusTones, sortable: true },
+      { key: "__contact", header: "Contact", type: "contact" },
     ],
-    rows: people(200, "DP", (r) => ({ zone: `Zone ${pick(["A", "B", "C", "D"], r)}`, deliveries: Math.floor(r() * 2000), rating: Math.round((3.8 + r() * 1.2) * 10) / 10, status: pick(["active", "active", "inactive", "blocked"], r) })),
+    rows: people(200, "DP", (r) => ({ phone: phone(r), zone: `Zone ${pick(["A", "B", "C", "D"], r)}`, deliveries: Math.floor(r() * 2000), rating: Math.round((3.8 + r() * 1.2) * 10) / 10, status: pick(["active", "active", "inactive", "blocked"], r) })),
   },
   "employees": {
     kind: "table", title: "Employees", subtitle: "Internal staff, departments and roles.",
-    actionLabel: "Add Employee", exportName: "employees", searchKeys: ["id", "name", "department", "email"],
+    actionLabel: "Add Employee", exportName: "employees", searchKeys: ["id", "name", "department", "email", "phone"],
     filters: { key: "status", label: "Status", options: ["all", "active", "inactive"] },
     stats: [
       { label: "Headcount", value: 148, tone: "primary" }, { label: "Active", value: 139, tone: "success" },
@@ -248,12 +288,14 @@ export const moduleRegistry: Record<string, ModuleConfig> = {
     ],
     columns: [
       { key: "name", header: "Employee", type: "avatar", sub: "email", sortable: true },
+      { key: "phone", header: "Phone", type: "phone", sortable: true },
       { key: "department", header: "Department", sortable: true },
       { key: "designation", header: "Designation", sortable: true },
       { key: "city", header: "Location", sortable: true },
       { key: "status", header: "Status", type: "badge", tones: statusTones, sortable: true },
+      { key: "__contact", header: "Contact", type: "contact" },
     ],
-    rows: people(300, "EMP", (r) => ({ department: pick(["Operations", "Support", "Finance", "Marketing", "Engineering", "HR"], r), designation: pick(["Manager", "Lead", "Associate", "Executive", "Director"], r), status: pick(["active", "active", "inactive"], r) })),
+    rows: people(300, "EMP", (r) => ({ phone: phone(r), department: pick(["Operations", "Support", "Finance", "Marketing", "Engineering", "HR"], r), designation: pick(["Manager", "Lead", "Associate", "Executive", "Director"], r), status: pick(["active", "active", "inactive"], r) })),
   },
 
   // ---- Marketplace ---- (Categories is a real API-backed page at /categories)
@@ -305,20 +347,22 @@ export const moduleRegistry: Record<string, ModuleConfig> = {
   },
   "subscriptions": {
     kind: "table", title: "Subscriptions", subtitle: "Recurring plans and member subscriptions.",
-    actionLabel: "Add Subscription", exportName: "subscriptions", searchKeys: ["id", "customer", "plan"],
+    actionLabel: "Add Subscription", exportName: "subscriptions", searchKeys: ["id", "name", "plan", "phone"],
     filters: { key: "status", label: "Status", options: ["all", "active", "paused", "cancelled"] },
     stats: [
       { label: "Active Subs", value: 1284, tone: "primary" }, { label: "MRR", value: 642000, display: "₹6.4L", tone: "success" },
       { label: "Churn", value: 3, display: "3.2%", tone: "danger" }, { label: "Trials", value: 86, tone: "warning" },
     ],
     columns: [
-      { key: "customer", header: "Member", type: "avatar", sub: "email", sortable: true },
+      { key: "name", header: "Member", type: "avatar", sub: "email", sortable: true },
+      { key: "phone", header: "Phone", type: "phone", sortable: true },
       { key: "plan", header: "Plan", sortable: true },
       { key: "amount", header: "Amount", type: "currency", align: "right", sortable: true },
       { key: "renews", header: "Renews", type: "date", sortable: true },
       { key: "status", header: "Status", type: "badge", tones: statusTones, sortable: true },
+      { key: "__contact", header: "Contact", type: "contact" },
     ],
-    rows: people(510, "SUB", (r) => ({ customer: name(Math.floor(r() * 20), r), plan: pick(["Basic", "Plus", "Premium", "Elite"], r), amount: money(r, 199, 1999), renews: daysAgoISO(-Math.floor(r() * 30) - 1), status: pick(["active", "active", "paused", "cancelled"], r) })),
+    rows: people(510, "SUB", (r) => ({ phone: phone(r), plan: pick(["Basic", "Plus", "Premium", "Elite"], r), amount: money(r, 199, 1999), renews: daysAgoISO(-Math.floor(r() * 30) - 1), status: pick(["active", "active", "paused", "cancelled"], r) })),
   },
   "coupons": {
     kind: "table", title: "Coupons", subtitle: "Discount codes, usage and limits.",
@@ -374,19 +418,19 @@ export const moduleRegistry: Record<string, ModuleConfig> = {
   // ---- Finance ----
   "wallets": {
     kind: "table", title: "Wallets", subtitle: "Customer & partner wallet balances and ledger.",
-    actionLabel: "Adjust Wallet", exportName: "wallets", searchKeys: ["id", "party"],
+    actionLabel: "Adjust Wallet", exportName: "wallets", searchKeys: ["id", "name"],
     stats: [
       { label: "Total Float", value: 1840000, display: "₹18.4L", tone: "primary" }, { label: "Credited Today", value: 96000, display: "₹96K", tone: "success" },
       { label: "Debited Today", value: 72000, display: "₹72K", tone: "warning" }, { label: "Active Wallets", value: 4210, tone: "accent" },
     ],
     columns: [
-      { key: "party", header: "Holder", type: "avatar", sub: "id", sortable: true },
+      { key: "name", header: "Holder", type: "avatar", sub: "id", sortable: true },
       { key: "balance", header: "Balance", type: "currency", align: "right", sortable: true },
       { key: "credited", header: "Credited", type: "currency", align: "right", sortable: true },
       { key: "debited", header: "Debited", type: "currency", align: "right", sortable: true },
       { key: "status", header: "Status", type: "badge", tones: statusTones, sortable: true },
     ],
-    rows: people(610, "WAL", (r) => ({ party: name(Math.floor(r() * 20), r), balance: money(r, 0, 25000), credited: money(r, 100, 40000), debited: money(r, 100, 30000), status: r() > 0.1 ? "active" : "inactive" })),
+    rows: people(610, "WAL", (r) => ({ balance: money(r, 0, 25000), credited: money(r, 100, 40000), debited: money(r, 100, 30000), status: r() > 0.1 ? "active" : "inactive" })),
   },
   "invoices": {
     kind: "table", title: "Invoices", subtitle: "Generated invoices and their payment status.",
@@ -506,9 +550,9 @@ export const moduleRegistry: Record<string, ModuleConfig> = {
   },
   "audit": {
     kind: "table", title: "Audit Logs", subtitle: "Security and admin action audit trail.",
-    exportName: "audit", searchKeys: ["user", "action", "target"],
+    exportName: "audit", searchKeys: ["name", "action", "target"],
     columns: [
-      { key: "user", header: "User", type: "avatar", sub: "ip", sortable: true },
+      { key: "name", header: "User", type: "avatar", sub: "ip", sortable: true },
       { key: "action", header: "Action", sortable: true },
       { key: "target", header: "Target", type: "mono", sortable: true },
       { key: "level", header: "Level", type: "badge", tones: statusTones, sortable: true },
@@ -580,7 +624,6 @@ export const moduleRegistry: Record<string, ModuleConfig> = {
 
 function marketingModule(key: string, title: string, subtitle: string): Record<string, ModuleConfig> {
   const channel = title.split(" ")[0];
-  const r0 = rng(key.length * 17);
   return {
     [key]: {
       kind: "table", title, subtitle, actionLabel: "New Message", exportName: key.replace("/", "-"),

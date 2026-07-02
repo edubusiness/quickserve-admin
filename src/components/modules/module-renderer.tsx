@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
-import { Star, TrendingUp, Users, ShoppingCart, IndianRupee, Pencil, Trash2 } from "lucide-react";
+import { Star, TrendingUp, Users, ShoppingCart, IndianRupee, Pencil, Trash2, Clock, Phone, Mail, MessageCircle } from "lucide-react";
 import { Card, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
@@ -19,7 +19,11 @@ import { useToast } from "@/components/ui/toast";
 import { useModuleCollection, useModuleMutations } from "@/hooks/use-module-collection";
 import type { ModuleConfig, ModuleColumn, TableModule, SettingsModule } from "@/data/modules";
 
-const skel = (h: number) => () => <div className="skeleton rounded-xl" style={{ height: h }} />;
+const skel = (h: number) => {
+  const Skeleton = () => <div className="skeleton rounded-xl" style={{ height: h }} />;
+  Skeleton.displayName = "Skeleton";
+  return Skeleton;
+};
 const OrdersAreaChart = dynamic(() => import("@/components/charts/analytics-charts").then((m) => m.OrdersAreaChart), { ssr: false, loading: skel(260) });
 const GrowthLineChart = dynamic(() => import("@/components/charts/analytics-charts").then((m) => m.GrowthLineChart), { ssr: false, loading: skel(260) });
 const CategoryDonut = dynamic(() => import("@/components/charts/analytics-charts").then((m) => m.CategoryDonut), { ssr: false, loading: skel(260) });
@@ -42,6 +46,27 @@ function cell(col: ModuleColumn, row: Record<string, any>) {
           {new Date(v).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}
         </span>
       );
+    case "time":
+      return (
+        <span className="inline-flex items-center gap-1 whitespace-nowrap text-card-foreground">
+          <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+          {v ? String(v) : "—"}
+        </span>
+      );
+    case "phone":
+      return v ? (
+        <a
+          href={`tel:${String(v).replace(/[^\d+]/g, "")}`}
+          className="inline-flex items-center gap-1 whitespace-nowrap font-medium text-[var(--accent)] hover:underline"
+        >
+          <Phone className="h-3.5 w-3.5" />
+          {String(v)}
+        </a>
+      ) : (
+        <span className="text-muted-foreground">—</span>
+      );
+    case "contact":
+      return <ContactActions row={row} />;
     case "badge":
       return (
         <Badge tone={col.tones?.[v] ?? "neutral"} className="capitalize">
@@ -74,6 +99,43 @@ function cell(col: ModuleColumn, row: Record<string, any>) {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Row = Record<string, any>;
+
+/** Quick contact actions for a ticket/record — call, email, WhatsApp the customer. */
+function ContactActions({ row }: { row: Row }) {
+  const rawPhone = row.phone ? String(row.phone).replace(/[^\d+]/g, "") : "";
+  const waNumber = rawPhone.replace(/^\+/, "");
+  const email = row.email ? String(row.email) : "";
+  const subject = row.subject ? `Re: ${row.subject}` : "Your support ticket";
+  const actions = [
+    rawPhone && { key: "call", label: `Call ${row.name ?? "customer"}`, href: `tel:${rawPhone}`, Icon: Phone, hover: "hover:bg-sky-500/10 hover:text-sky-400" },
+    email && { key: "email", label: `Email ${row.name ?? "customer"}`, href: `mailto:${email}?subject=${encodeURIComponent(subject)}`, Icon: Mail, hover: "hover:bg-violet-500/10 hover:text-violet-400" },
+    waNumber && { key: "whatsapp", label: `WhatsApp ${row.name ?? "customer"}`, href: `https://wa.me/${waNumber}`, Icon: MessageCircle, hover: "hover:bg-emerald-500/10 hover:text-emerald-400" },
+  ].filter(Boolean) as { key: string; label: string; href: string; Icon: typeof Phone; hover: string }[];
+
+  if (actions.length === 0) return <span className="text-muted-foreground">—</span>;
+
+  return (
+    <div className="flex items-center justify-end gap-1">
+      {actions.map(({ key, label, href, Icon, hover }) => (
+        <a
+          key={key}
+          href={href}
+          target={key === "whatsapp" ? "_blank" : undefined}
+          rel={key === "whatsapp" ? "noopener noreferrer" : undefined}
+          onClick={(e) => e.stopPropagation()}
+          aria-label={label}
+          title={label}
+          className={cn(
+            "grid h-8 w-8 place-items-center rounded-lg text-muted-foreground transition-colors",
+            hover,
+          )}
+        >
+          <Icon className="h-4 w-4" />
+        </a>
+      ))}
+    </div>
+  );
+}
 
 function FilterChips({ config, filter, setFilter }: { config: TableModule; filter: string; setFilter: (f: string) => void }) {
   if (!config.filters) return null;

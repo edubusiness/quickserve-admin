@@ -8,8 +8,11 @@ import { analyticsKpis } from "@/data/analytics";
 import { toneChip } from "@/lib/tones";
 import { cn } from "@/lib/utils";
 
-const skeleton = (h: number) => () =>
-  <div className="skeleton rounded-xl" style={{ height: h }} />;
+const skeleton = (h: number) => {
+  const ChartSkeleton = () => <div className="skeleton rounded-xl" style={{ height: h }} />;
+  ChartSkeleton.displayName = "ChartSkeleton";
+  return ChartSkeleton;
+};
 
 const RevenueBarChart = dynamic(() => import("@/components/charts/analytics-charts").then((m) => m.RevenueBarChart), { ssr: false, loading: skeleton(300) });
 const OrdersAreaChart = dynamic(() => import("@/components/charts/analytics-charts").then((m) => m.OrdersAreaChart), { ssr: false, loading: skeleton(260) });
