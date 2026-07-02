@@ -1,15 +1,15 @@
-# Render Blueprint for the QuickServe API (Docker).
-# Deploy: push this repo, then in Render → "New +" → "Blueprint" → pick this repo.
-# MONGODB_URI and CLIENT_ORIGIN are marked sync:false — set them in the dashboard
-# (MONGODB_URI = your Atlas connection string; CLIENT_ORIGIN = your Vercel URL).
+# Render Blueprint — deploys the WHOLE app (no Vercel): Next.js web + Express API.
+# Deploy: push this repo → Render → "New +" → "Blueprint" → pick this repo → Apply.
+# Fill the sync:false vars in the dashboard when prompted (see comments below).
 services:
+  # ---- Express API ----
   - type: web
     name: quickserve-api
     runtime: docker
     dockerfilePath: ./server/Dockerfile
     dockerContext: ./server
     plan: free
-    region: oregon
+    region: singapore # closest Render region to India
     healthCheckPath: /health
     autoDeploy: true
     envVars:
@@ -22,6 +22,30 @@ services:
       - key: JWT_SECRET
         generateValue: true
       - key: MONGODB_URI
-        sync: false
+        sync: false # = your MongoDB Atlas connection string
       - key: CLIENT_ORIGIN
-        sync: false
+        sync: false # = the web URL, e.g. https://find.manyathy.in
+
+  # ---- Next.js web (standalone server: auth + SSR, full app) ----
+  - type: web
+    name: quickserve-web
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    plan: free
+    region: singapore
+    healthCheckPath: /login
+    autoDeploy: true
+    envVars:
+      # NEXT_PUBLIC_API_URL is baked into the browser bundle at BUILD time (Render
+      # passes env vars as Docker build args), so set it to the API's public URL.
+      - key: NEXT_PUBLIC_API_URL
+        sync: false # = the API URL, e.g. https://api.manyathy.in
+      - key: API_URL
+        sync: false # = same API URL (used server-side by NextAuth)
+      - key: NEXTAUTH_URL
+        sync: false # = the web URL, e.g. https://find.manyathy.in
+      - key: AUTH_SECRET
+        generateValue: true # NextAuth v5 session secret
+      - key: NEXT_TELEMETRY_DISABLED
+        value: "1"

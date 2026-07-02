@@ -96,5 +96,7 @@ export interface NavItem {
 
 export interface NavSection {
   title?: string;
+  /** Icon shown when the section is rendered as a collapsible root item. */
+  icon?: LucideIcon;
   items: NavItem[];
 }

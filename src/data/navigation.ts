@@ -53,6 +53,7 @@ export const navigation: NavSection[] = [
   },
   {
     title: "Operations",
+    icon: Radio,
     items: [
       {
         label: "Bookings",
@@ -71,6 +72,7 @@ export const navigation: NavSection[] = [
   },
   {
     title: "Users & Partners",
+    icon: Users,
     items: [
       { label: "Customers", icon: Users, href: "/customers" },
       { label: "Service Providers", icon: Briefcase, href: "/providers" },
@@ -82,6 +84,7 @@ export const navigation: NavSection[] = [
   },
   {
     title: "Marketplace",
+    icon: ShoppingCart,
     items: [
       { label: "Categories", icon: LayoutGrid, href: "/categories" },
       { label: "Services", icon: Wrench, href: "/services" },
@@ -97,6 +100,7 @@ export const navigation: NavSection[] = [
   },
   {
     title: "Finance",
+    icon: Landmark,
     items: [
       { label: "Payments", icon: CreditCard, href: "/payments" },
       { label: "Wallets", icon: Wallet, href: "/wallets" },
@@ -109,6 +113,7 @@ export const navigation: NavSection[] = [
   },
   {
     title: "Marketing",
+    icon: Megaphone,
     items: [
       { label: "Notifications", icon: Bell, href: "/marketing/notifications" },
       { label: "Email Campaigns", icon: Mail, href: "/marketing/email" },
@@ -119,6 +124,7 @@ export const navigation: NavSection[] = [
   },
   {
     title: "Analytics",
+    icon: TrendingUp,
     items: [
       { label: "Revenue", icon: TrendingUp, href: "/analytics/revenue" },
       { label: "Orders", icon: ShoppingCart, href: "/analytics/orders" },
@@ -130,6 +136,7 @@ export const navigation: NavSection[] = [
   },
   {
     title: "Platform",
+    icon: Settings,
     items: [
       { label: "CMS", icon: FileText, href: "/cms" },
       { label: "Roles & Permissions", icon: ShieldCheck, href: "/roles" },
